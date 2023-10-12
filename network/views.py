@@ -20,6 +20,19 @@ def index(request):
         "current_page" : current_page,
         
     })
+def profile(request, user_id):
+    user = User.objects.get(pk=user_id)
+    posts = Post.objects.filter(user=user)
+    p = Paginator(posts, 10)
+    number_of_pages = p.page_range
+    current_page = request.GET.get('page')
+    page_posts = p.get_page(current_page)
+    return render(request, "network/profile.html", {
+        "posts" : page_posts,
+        "number_of_pages" : number_of_pages,
+        "current_page" : current_page,
+        "user_name" : user.username,    
+    })
 
 def post(request):
     if request.method == "POST":
