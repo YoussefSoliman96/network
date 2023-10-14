@@ -10,12 +10,10 @@
                 {% csrf_token %}
                 <div class="form-group mx-5 border p-3">
                     <label for="post" style = "font-weight:450; font-size:25px">New Post</label>
-                    <textarea class="form-control" name="post-content" id="post" rows="3" ></textarea>
+                    <textarea class="form-control" name="post-content" id="post" rows="2" style="border-radius: 20px;" placeholder="What's on your mind, {{ user }}?" ></textarea>
                     <button class="btn btn-primary my-2" type="submit">Post</button>
                 </div>
-                
             </form>
-        
             {% endif %}
         </section>
     
@@ -23,30 +21,71 @@
         <section class="all-posts" style="width: 1200px;">
             {% for post in posts %}
             <div class="border mx-3 px-3 mt-3">
-                <h4 class="my-3"> {{ post.user }} </h4>
-                <a href="" type="submit" class="my-1" style="text-decoration: none;">Edit</a>
-                <p>{{ post.content }}</p>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="my-3"><a style="text-decoration: none;" href="{% url 'profile' user_id=post.user.id %}">{{ post.user }}</a></h4>
+                    </div>
+                    <div class="my-3">
+                        {% if user.is_authenticated %}
+                            {% if user == post.user %}
+                                <div>
+                                    <a href="" type="submit" class="btn btn-dark" style="text-decoration: none;" 
+                                    data-toggle="modal" data-target="#edit_{{ post.id }}">Edit</a>
+                                </div>
+                                <div class="modal fade" id="edit_{{ post.id }}" tabindex="-1" aria-labelledby="edit_{{ post.id }}_label" aria-hidden="true" role="dialog">
+                                    <div class="modal-dialog modal-dialog-centered" role="document">
+                                        <div class="modal-content">
+                                        <div class="modal-header">
+                                          <h5 class="modal-title">Edit</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                          </button>
+                                        </div>
+                                        <div class="modal-body">
+                                          <textarea class="form-control" id="edit_content_{{ post.id }}">{{ post.content }}</textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                          <button type="button" class="btn btn-primary"  onclick="editPost({{ post.id }})">Save changes</button>
+                                          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                </div>
+                            
+
+                            {% endif %}
+                        {% endif %}
+                    </div> 
+                </div>
+                
+                <p id="content_{{ post.id }}">{{ post.content }}</p>
                 <p class="text-muted" style="font-size: 14px;"> {{ post.created_at }} </p>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-fill" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
                   </svg> 0
                 <hr>
-                <button type="button" class="btn btn-outline-danger" style="margin-bottom: 10px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
-                <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
-                </svg>
-                Like
-                </button>
-                <button type="button" class="btn btn-outline-primary" style="margin-bottom: 10px;">Comment</button>
-            </div>
+                {% if user.is_authenticated %}
+                  {% if post.id not in liked_posts %}
+                    <button type="button" class="btn btn-outline-danger" style="margin-bottom: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
+                        <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                        </svg>
+                        Like
+                    </button>
+                  {% endif %}
+                {% endif %}
                 
+                <button type="button" class="btn btn-outline-primary" style="margin-bottom: 10px;">Comment</button>
+                {{ liked_posts }}
+            </div>
+               
 
             {% endfor %}
         </section>
 
 
         <div class="mt-5">
-            <nav aria-label="Page navigation example">
+            <nav aria-label="Page navigation">
                 <ul class="pagination">
 
                     {% if posts.has_previous %}
@@ -65,14 +104,6 @@
                 </ul>
                 </nav>
         </div>
-
-
     </div>
-    
-    
-    
 {% endblock %}
 
-{% block script %}
-    <script src="{% static 'network/index.js' %}"></script>
-{% endblock %}

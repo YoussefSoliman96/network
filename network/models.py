@@ -13,3 +13,17 @@ class Post(models.Model):
     
     def __str__(self):
         return f"{self.id} by {self.user}"
+    
+class Follow(models.Model):
+    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name="following_user")
+    followed = models.ForeignKey(User, on_delete=models.CASCADE, related_name="followed_user")
+
+    def __str__(self):
+        return f"{self.following} is following {self.followed}"
+
+class Like(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Like_user")
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="liked_post")
+
+    def __str__(self):
+        return f"{self.user} liked {self.post}"
