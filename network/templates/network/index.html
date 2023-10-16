@@ -1,9 +1,10 @@
 {% extends "network/layout.html" %}
 {% load static %}
-
 {% block body %}
     <h1 class="mx-4">All Posts</h1>
     <div class="d-flex flex-column align-items-center">
+
+        <!-- Profile card -->
         <section class="new-post" style="width: 1000px;">
             {% if user.is_authenticated %}
             <form action="{% url 'post' %}" method="POST">
@@ -17,14 +18,15 @@
             {% endif %}
         </section>
     
-
+        <!-- All posts -->
         <section class="all-posts" style="width: 1200px;">
             {% for post in posts %}
-            <div class="border mx-3 px-3 mt-3">
+            <div class="border mx-3 px-3 mt-3" id="post_{{ post.id }}">
                 <div class="d-flex justify-content-between">
                     <div>
                         <h4 class="my-3"><a style="text-decoration: none;" href="{% url 'profile' user_id=post.user.id %}">{{ post.user }}</a></h4>
                     </div>
+                    <!-- Edit button and popup window -->
                     <div class="my-3">
                         {% if user.is_authenticated %}
                             {% if user == post.user %}
@@ -45,45 +47,92 @@
                                           <textarea class="form-control" id="edit_content_{{ post.id }}">{{ post.content }}</textarea>
                                         </div>
                                         <div class="modal-footer">
+                                            {% csrf_token %}
                                           <button type="button" class="btn btn-primary"  onclick="editPost({{ post.id }})">Save changes</button>
                                           <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                                         </div>
                                       </div>
                                     </div>
                                 </div>
-                            
-
                             {% endif %}
                         {% endif %}
                     </div> 
                 </div>
-                
+                <!-- Post body -->
                 <p id="content_{{ post.id }}">{{ post.content }}</p>
                 <p class="text-muted" style="font-size: 14px;"> {{ post.created_at }} </p>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-fill" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
-                  </svg> 0
+                <div class="d-flex">
+                    <svg class="my-1 mx-1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart-fill" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/>
+                      </svg> <p id="post_likes_{{ post.id }}">{{ post.likes }}</p>
+                      <p id="like_count"></p>
+                </div>
+                <!-- Like and unlike -->
+                <div class="d-flex justify-content-between">
+                    <div class="d-flex">
+                        <div>
+                            {% if user.is_authenticated %}
+                                {% if post.id not in liked_posts %}
+                                <button type="submit" class="btn btn-outline-danger" id="like_{{ post.id }}" style="margin-bottom: 10px;" onclick="like({{ post.id }}, {{ liked_posts }})">
+                                    
+                                    Like
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-outline-danger" id="like_{{ post.id }}" style="margin-bottom: 10px;" onclick="like({{ post.id }}, {{ liked_posts }})">
+                                
+                                Unlike
+                                </button>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                 </div>      
+                    <div>
+                        {% if user == post.user %}
+                        <!-- Delete -->
+                        <button type="submit" class="btn btn-danger" onclick="delete_post({{ post.id }})">Delete</button>
+                        {% endif %}
+                    </div>
+                </div>
                 <hr>
-                {% if user.is_authenticated %}
-                  {% if post.id not in liked_posts %}
-                    <button type="button" class="btn btn-outline-danger" style="margin-bottom: 10px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
-                        <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
-                        </svg>
-                        Like
-                    </button>
-                  {% endif %}
-                {% endif %}
-                
-                <button type="button" class="btn btn-outline-primary" style="margin-bottom: 10px;">Comment</button>
-                {{ liked_posts }}
+                <div class="mx-2">
+                    {% if user.is_authenticated %}
+                    <div>
+                        <form action="{% url 'comment' post_id=post.id %}" method="POST">
+                          {% csrf_token %}
+                          <input type="text" name="comment" placeholder="comment on this post" style="width: 300px;">
+                          <button type="submit" class="btn btn-light btn-sm my-2">Submit comment</button>
+                        </form>
+                    </div>
+                    {% endif %}                  
+                </div>
+                <div>
+                    <ul class="list-group list-group-flush">
+                      {% for comment in comments %}
+                      {% if comment.post.id == post.id %}
+                      <li class="list-group-item" id="comment_{{ comment.id }}" style="list-style-type: none;">{{ comment.comment }} 
+                        <br>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <p class="text-info" style="font-size: 12px; display: inline; font-weight: bold;">{{ comment.writer }} </p> 
+                                <span class="card-subtitle mb-2 text-muted" style="font-size: 12px; display: inline;">at {{ comment.created_at }}</span> 
+                            </div>
+                            <div>
+                                {% if user == comment.writer %}
+                                <!-- Delete -->
+                                <button type="submit" class="btn btn-danger btn-sm" id="comment_delete" onclick="delete_comment({{ comment.id }})">Delete</button>
+                                {% endif %}                            
+                            </div>
+                        </div>
+                      </li>   
+                      {% endif %}
+                      {% endfor %}
+                    </ul>
+                  </div>
             </div>
-               
-
-            {% endfor %}
+        {% endfor %}
         </section>
 
-
+        <!-- Posts per page and navigation buttons -->
         <div class="mt-5">
             <nav aria-label="Page navigation">
                 <ul class="pagination">

@@ -8,7 +8,8 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 
 
-from .models import User, Post, Follow, Like
+
+from .models import User, Post, Follow, Like, Comment
 
 
 def index(request):
@@ -22,14 +23,14 @@ def index(request):
     liked_posts = []
     for like in likes:
         if like.user.id == current_user.id:
-            liked_posts.append(like.id)
-    
+            liked_posts.append(like.post.id)
+    comments = Comment.objects.all().order_by("id").reverse()
     return render(request, "network/index.html", {
         "posts" : page_posts,
         "number_of_pages" : number_of_pages,
         "current_page" : current_page,
-        "liked_posts" : liked_posts,
-        
+        "liked_posts" : liked_posts, 
+        "comments": comments,
     })
     
     
@@ -44,12 +45,19 @@ def post(request):
     
 def profile(request, user_id):
     user = User.objects.get(pk=user_id)
-    posts = Post.objects.filter(user=user)
+    posts = Post.objects.filter(user=user).order_by("id").reverse()
     # Show only 10 posts per page
     p = Paginator(posts, 10)
     number_of_pages = p.page_range
     current_page = request.GET.get('page')
     page_posts = p.get_page(current_page)
+    current_user = request.user
+    likes = Like.objects.all()
+    liked_posts = []
+    for like in likes:
+        if like.user.id == current_user.id:
+            liked_posts.append(like.post.id)
+    
     
     # Show number of followers and accounts that the user is following
     following = Follow.objects.filter(following = user)
@@ -67,6 +75,7 @@ def profile(request, user_id):
         "following" : following,    
         "followers" : followers,
         "visited_user" : user,  
+        "liked_posts" : liked_posts, 
     })
     
     followage = followers.filter(following_id=visitor)
@@ -84,6 +93,7 @@ def profile(request, user_id):
         "followage" : followage,
         "visitor" : visitor, 
         "visited_user" : user,  
+        "liked_posts" : liked_posts, 
     })
     
     
@@ -121,11 +131,19 @@ def following(request, username):
     number_of_pages = p.page_range
     current_page = request.GET.get('page')
     page_posts = p.get_page(current_page)
+    comments = Comment.objects.all().order_by("id").reverse()
+    likes = Like.objects.all()
+    liked_posts = []
+    for like in likes:
+        if like.user.id == current_user.id:
+            liked_posts.append(like.post.id)
+    
     return render(request, "network/following.html", {
         "posts" : page_posts,
         "number_of_pages" : number_of_pages,
         "current_page" : current_page,
-        
+        "comments": comments,
+        "liked_posts" : liked_posts, 
     })
 
 
@@ -190,3 +208,50 @@ def edit(request, post_id):
          
     return JsonResponse({"alert": "Edited.", "edited_text": edited_text["content"]})
 
+def like(request, post_id):
+    post = Post.objects.get(pk=post_id)
+    user = User.objects.get(pk=request.user.id)
+    like = Like(user=user, post=post)
+    like.save()
+    post.likes = post.likes + 1
+    post.save()
+    return JsonResponse({"alert": "Liked."})
+
+
+def unlike(request, post_id):
+    post = Post.objects.get(pk=post_id)
+    user = User.objects.get(pk=request.user.id)
+    like = Like.objects.filter(user=user, post=post)
+    like.delete()
+    post.likes = post.likes - 1
+    post.save()  
+    return JsonResponse({"alert": "Unliked."})
+
+
+@csrf_exempt
+def delete_post(request, post_id):
+    if request.method == "POST":
+        post = Post.objects.filter(id = post_id)
+        post.delete()
+        return JsonResponse({"alert": "Post Removed."})
+
+def comment(request, post_id):
+    if request.method == "POST":
+        user= request.user
+        post = Post.objects.get(pk=post_id)
+        comment = request.POST['comment']
+        
+        newComment = Comment(
+            writer = user,
+            post = post,
+            comment = comment,
+        )   
+        newComment.save()
+    return HttpResponseRedirect(reverse("index"))
+
+@csrf_exempt
+def delete_comment(request, comment_id):
+    if request.method == "POST":
+        comment = Comment.objects.filter(id = comment_id)
+        comment.delete()
+        return JsonResponse({"alert": "Comment Removed."})
