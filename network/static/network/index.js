@@ -19,7 +19,7 @@ function editPost(id){
     .then(response => response.json())
     .then(result => {
         text.innerHTML = result.edited_text;
-
+        // Close the pop-up
         modal.classList.remove('show');
         modal.setAttribute('aria-hidden', 'true');
         modal.setAttribute('style', 'display: none');
@@ -64,16 +64,16 @@ function delete_comment(id){
 }
 
 function like(id, liked_posts){
-
-    if (liked == undefined) {
-        if (liked_posts.includes(id) == true){
-            var liked = true;
-        }
-        else {
-            var liked = false;
-        }
+    console.log(liked_posts)
+    // Check if post is liked
+    if (liked_posts.includes(id) == true){
+        var liked = true;
     }
-    
+    else {
+        var liked = false;
+    }
+
+
     if (liked == true){
         fetch(`unlike/${id}`)
             var likeBtn = document.getElementById(`like_${id}`)
@@ -81,15 +81,25 @@ function like(id, liked_posts){
             likeBtn.innerText = "like"
             var newLikes = parseInt(likes.innerHTML) - 1;
             likes.innerHTML = newLikes;
+            liked = false
+            liked_posts.pop(id)
 
     }
-    if (liked == false){
+    else if (liked == false){
         fetch(`like/${id}`)
             var likeBtn = document.getElementById(`like_${id}`)
             var likes = document.getElementById(`post_likes_${id}`)
             likeBtn.innerText = "Unlike"
             var newLikes = parseInt(likes.innerHTML) + 1;
             likes.innerHTML = newLikes;
+            liked = true
+            liked_posts.push(id)
     }
-}
+    console.log(liked)
+    likeBtn = document.getElementById(`like_${id}`)
+    likeBtn.onclick = () => {
+        like(id, liked_posts)
+    }
+    }
+    
 

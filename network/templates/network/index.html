@@ -74,12 +74,10 @@
                             {% if user.is_authenticated %}
                                 {% if post.id not in liked_posts %}
                                 <button type="submit" class="btn btn-outline-danger" id="like_{{ post.id }}" style="margin-bottom: 10px;" onclick="like({{ post.id }}, {{ liked_posts }})">
-                                    
-                                    Like
+                                Like
                                 </button>
                                 {% else %}
-                                <button type="submit" class="btn btn-outline-danger" id="like_{{ post.id }}" style="margin-bottom: 10px;" onclick="like({{ post.id }}, {{ liked_posts }})">
-                                
+                                <button type="submit" class="btn btn-outline-danger" id="like_{{ post.id }}" style="margin-bottom: 10px;" onclick="like({{ post.id }}, {{ liked_posts }})">                
                                 Unlike
                                 </button>
                                 {% endif %}
